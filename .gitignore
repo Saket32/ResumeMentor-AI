@@ -1,0 +1,19 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Personal data and databases
+*.db
+chroma_db/
+*.pdf
+
+# Secrets
+.env
+.streamlit/secrets.toml
+
+# IDE and system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
