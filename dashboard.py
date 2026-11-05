@@ -1,5 +1,8 @@
 
+import os
 import streamlit as st
+
+from resume_manager import upload_resume, get_current_resume
 
 st.set_page_config(
     page_title="ResumeMentor AI",
@@ -120,10 +123,7 @@ if page == "Dashboard":
         st.markdown("""
         <div class="feature-card">
             <h3>📄 Resume Analysis</h3>
-            <p>
-                Upload your resume and discover its strengths,
-                weaknesses, and improvement opportunities.
-            </p>
+            <p>Discover your resume's strengths and improvement opportunities.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -131,10 +131,7 @@ if page == "Dashboard":
         st.markdown("""
         <div class="feature-card">
             <h3>🎤 Interview Assessment</h3>
-            <p>
-                Prepare for Technical, Managerial, and HR
-                interviews at different difficulty levels.
-            </p>
+            <p>Prepare for Technical, Managerial, and HR interviews.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -142,10 +139,7 @@ if page == "Dashboard":
         st.markdown("""
         <div class="feature-card">
             <h3>🎯 Target Role</h3>
-            <p>
-                Explore your desired career role and identify
-                the skills needed to pursue it.
-            </p>
+            <p>Explore your desired career role and required skills.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -155,10 +149,7 @@ if page == "Dashboard":
         st.markdown("""
         <div class="feature-card">
             <h3>📊 Skill Gap Analysis</h3>
-            <p>
-                Understand the difference between your current
-                skills and your target role requirements.
-            </p>
+            <p>Understand your current skills and target role requirements.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -166,10 +157,7 @@ if page == "Dashboard":
         st.markdown("""
         <div class="feature-card">
             <h3>📚 Learning Roadmap</h3>
-            <p>
-                Build a personalized learning path to improve
-                your knowledge and career readiness.
-            </p>
+            <p>Build a personalized learning journey.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -177,10 +165,7 @@ if page == "Dashboard":
         st.markdown("""
         <div class="feature-card">
             <h3>🤖 AI Career Mentor</h3>
-            <p>
-                Interact with an AI assistant for career,
-                resume, and technical guidance.
-            </p>
+            <p>Get AI-powered career and technical guidance.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -188,19 +173,116 @@ if page == "Dashboard":
     st.markdown("### 🚀 Getting Started")
 
     st.info(
-        "Your career dashboard is being prepared. "
-        "Resume upload and personalized analysis will be "
-        "integrated in the next development stages."
+        "Visit Resume Analysis to upload your resume "
+        "and create your career profile."
     )
+
+
+# ---------- RESUME ANALYSIS ----------
+elif page == "Resume Analysis":
+
+    st.title("📄 Resume Analysis")
+
+    st.write(
+        "Upload your PDF resume to create your personalized "
+        "AI career profile."
+    )
+
+    st.divider()
+
+    # Current saved resume
+    current_resume = get_current_resume()
+
+    if current_resume:
+        st.success("You already have a saved resume profile.")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("### 📁 Current Resume")
+            st.write(f"**Filename:** {current_resume['filename']}")
+            st.write(
+                f"**Last Updated:** {current_resume['updated_at']}"
+            )
+            st.write(
+                f"**Extracted Characters:** "
+                f"{len(current_resume['extracted_text'])}"
+            )
+
+        with col2:
+            file_path = current_resume["file_path"]
+
+            if os.path.isfile(file_path):
+                with open(file_path, "rb") as file:
+                    st.download_button(
+                        label="⬇️ Download Current Resume",
+                        data=file.read(),
+                        file_name=current_resume["filename"],
+                        mime="application/pdf"
+                    )
+            else:
+                st.warning("The saved PDF file could not be found.")
+
+        with st.expander("Preview Extracted Resume Text"):
+            st.text_area(
+                "Extracted Content",
+                value=current_resume["extracted_text"],
+                height=300,
+                disabled=True
+            )
+
+        st.divider()
+        st.markdown("### 🔄 Replace Resume")
+        st.caption(
+            "Uploading another resume will replace your existing "
+            "career profile."
+        )
+
+    else:
+        st.info("No resume uploaded yet. Upload your first resume below.")
+
+    # PDF uploader
+    uploaded_file = st.file_uploader(
+        "Choose your resume (PDF)",
+        type=["pdf"],
+        help="Upload a text-readable PDF resume."
+    )
+
+    if uploaded_file is not None:
+
+        if st.button("🚀 Upload and Save Resume", type="primary"):
+
+            try:
+                with st.spinner("Processing your resume..."):
+
+                    result = upload_resume(uploaded_file)
+
+                st.success("Resume uploaded and saved successfully!")
+
+                st.write(f"**Filename:** {result['filename']}")
+                st.write(
+                    f"**Extracted Characters:** "
+                    f"{result['character_count']}"
+                )
+
+                st.session_state["resume_upload_success"] = True
+
+            except ValueError as error:
+                st.error(str(error))
+
+            except Exception as error:
+                st.error(f"Resume upload failed: {error}")
+
+    # Refresh saved resume information after successful upload
+    if st.session_state.get("resume_upload_success", False):
+        st.session_state["resume_upload_success"] = False
+        st.rerun()
 
 
 # ---------- OTHER PAGES ----------
 else:
+
     page_details = {
-        "Resume Analysis": (
-            "📄 Resume Analysis",
-            "Upload and analyze your resume with AI. Coming soon."
-        ),
         "Interview Assessment": (
             "🎤 Interview Assessment",
             "Technical, Managerial, and HR interview assessments. Coming soon."
