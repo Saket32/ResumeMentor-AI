@@ -4,6 +4,8 @@ import sqlite3
 DB_NAME = "chat_history.db"
 
 
+# ---------------- DATABASE CONNECTION ----------------
+
 def get_connection():
     return sqlite3.connect(DB_NAME)
 
@@ -41,6 +43,17 @@ def create_database():
             access_type TEXT NOT NULL
                 CHECK(access_type IN ('private', 'shared')),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Store the user's main resume and career profile
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS resume_profiles (
+            profile_id INTEGER PRIMARY KEY CHECK (profile_id = 1),
+            filename TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            extracted_text TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
@@ -232,3 +245,78 @@ def get_available_documents(session_id):
     connection.close()
 
     return documents
+
+
+# ---------------- RESUME PROFILE FUNCTIONS ----------------
+
+def save_resume_profile(filename, file_path, extracted_text):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        INSERT INTO resume_profiles (
+            profile_id,
+            filename,
+            file_path,
+            extracted_text,
+            updated_at
+        )
+        VALUES (1, ?, ?, ?, CURRENT_TIMESTAMP)
+
+        ON CONFLICT(profile_id)
+        DO UPDATE SET
+            filename = excluded.filename,
+            file_path = excluded.file_path,
+            extracted_text = excluded.extracted_text,
+            updated_at = CURRENT_TIMESTAMP
+    """, (
+        filename,
+        file_path,
+        extracted_text
+    ))
+
+    connection.commit()
+    connection.close()
+
+
+def get_resume_profile():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT
+            profile_id,
+            filename,
+            file_path,
+            extracted_text,
+            updated_at
+        FROM resume_profiles
+        WHERE profile_id = 1
+    """)
+
+    profile = cursor.fetchone()
+    connection.close()
+
+    if profile is None:
+        return None
+
+    return {
+        "profile_id": profile[0],
+        "filename": profile[1],
+        "file_path": profile[2],
+        "extracted_text": profile[3],
+        "updated_at": profile[4]
+    }
+
+
+def delete_resume_profile():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        DELETE FROM resume_profiles
+        WHERE profile_id = 1
+    """)
+
+    connection.commit()
+    connection.close()
