@@ -37,7 +37,7 @@ The goal is to help users understand their resumes, identify skill gaps, improve
 | Sentence Transformers | Text embeddings |
 | PyPDF | PDF text extraction |
 
-## Project Structure
+### Project Structure
 
 ```text
 ResumeMentor-AI/
